@@ -1,0 +1,230 @@
+Program.Sub.ScreenSU.Start
+gui.SS_Form1..create
+gui.SS_Form1..caption("PNC Positive Pay Export v2")
+gui.SS_Form1..size(4135,1825)
+gui.SS_Form1..minx(0)
+gui.SS_Form1..miny(0)
+gui.SS_Form1..position(0,0)
+gui.SS_Form1..event(unload,ss_form1_unload)
+gui.SS_Form1..alwaysontop(False)
+gui.SS_Form1..fontname("Arial")
+gui.SS_Form1..fontsize(8)
+gui.SS_Form1..forecolor(0)
+gui.SS_Form1..fontstyle(,,,,)
+gui.SS_Form1..BackColor(-2147483633)
+gui.SS_Form1..controlbox(True)
+gui.SS_Form1..maxbutton(False)
+gui.SS_Form1..minbutton(False)
+gui.SS_Form1..mousepointer(0)
+gui.SS_Form1..moveable(True)
+gui.SS_Form1..sizeable(False)
+gui.SS_Form1..ShowInTaskBar(True)
+gui.SS_Form1..titlebar(True)
+gui.SS_Form1.lbl_dtpBeg.create(label,"Beginning Date",True,1800,200,1,100,135,True,0,Arial,8,-2147483633,0)
+gui.SS_Form1.lbl_dtpBeg.defaultvalue("")
+gui.SS_Form1.lbl_dtpBeg.controlgroup(0)
+gui.SS_Form1.dtpBeg.create(datepicker)
+gui.SS_Form1.dtpBeg.visible(True)
+gui.SS_Form1.dtpBeg.size(1800,345)
+gui.SS_Form1.dtpBeg.zorder(0)
+gui.SS_Form1.dtpBeg.position(100,335)
+gui.SS_Form1.dtpBeg.enabled(True)
+gui.SS_Form1.dtpBeg.checkbox(False)
+gui.SS_Form1.dtpBeg.defaultvalue("")
+gui.SS_Form1.dtpBeg.controlgroup(0)
+gui.SS_Form1.lbl_dtpEnd.create(label,"Ending Date",True,1800,200,1,1985,135,True,0,Arial,8,-2147483633,0)
+gui.SS_Form1.lbl_dtpEnd.defaultvalue("")
+gui.SS_Form1.lbl_dtpEnd.controlgroup(0)
+gui.SS_Form1.dtpEnd.create(datepicker)
+gui.SS_Form1.dtpEnd.visible(True)
+gui.SS_Form1.dtpEnd.size(1800,345)
+gui.SS_Form1.dtpEnd.zorder(0)
+gui.SS_Form1.dtpEnd.position(1985,335)
+gui.SS_Form1.dtpEnd.enabled(True)
+gui.SS_Form1.dtpEnd.checkbox(False)
+gui.SS_Form1.dtpEnd.defaultvalue("")
+gui.SS_Form1.dtpEnd.controlgroup(0)
+gui.SS_Form1.cmdOk.create(button)
+gui.SS_Form1.cmdOk.caption("Ok")
+gui.SS_Form1.cmdOk.visible(True)
+gui.SS_Form1.cmdOk.size(1000,360)
+gui.SS_Form1.cmdOk.zorder(0)
+gui.SS_Form1.cmdOk.position(100,850)
+gui.SS_Form1.cmdOk.enabled(True)
+gui.SS_Form1.cmdOk.fontname("Arial")
+gui.SS_Form1.cmdOk.fontsize(8)
+gui.SS_Form1.cmdOk.event(click,cmdok_click)
+gui.SS_Form1.cmdOk.defaultvalue("")
+gui.SS_Form1.cmdOk.controlgroup(0)
+gui.SS_Form1.dtpBeg.tabstop(true)
+gui.SS_Form1.dtpBeg.tabindex(1)
+gui.SS_Form1.dtpEnd.tabstop(true)
+gui.SS_Form1.dtpEnd.tabindex(2)
+gui.SS_Form1.cmdOk.tabstop(true)
+gui.SS_Form1.cmdOk.tabindex(3)
+
+
+Program.Sub.ScreenSU.End
+
+Program.Sub.Preflight.Start
+
+Program.Sub.Preflight.End
+
+Program.Sub.Main.Start
+F.Intrinsic.Control.SetErrorHandler("Main_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+
+Function.Odbc.Connection!Conx.Openconnection(Variable.Ambient.pDSN,Variable.Ambient.PUser,Variable.Ambient.PPass)
+
+Gui.SS_Form1..Show
+
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Main_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: PNC_Positive_Pay_Export_VAR002.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_form1_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Main.End
+
+Program.Sub.Detail.Start
+F.Intrinsic.Control.SetErrorHandler("Detail_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+V.Local.sSel.Declare(String)
+V.Local.sExport.Declare(String)
+V.Local.fVal.Declare(Float)
+V.Local.sBegDate.Declare(String)
+V.Local.sEndDate.Declare(String)
+V.Local.sHold.Declare(String)
+V.Local.sFileData.Declare(String)
+V.Local.sFileName.Declare(String)
+
+F.Intrinsic.String.Replace(V.Screen.SS_Form1!dtpBeg.Value,"/","",V.Local.sBegDate)
+F.Intrinsic.String.Concat(V.Caller.FilesDir,"\PNC",V.Local.sBegDate,V.Local.sFileName)
+
+F.Intrinsic.String.Format(V.Screen.SS_Form1!dtpBeg.Value,"YYYYMMDD",V.Local.sBegDate)
+F.Intrinsic.String.Format(V.Screen.SS_Form1!dtpEnd.Value,"YYYYMMDD",V.Local.sEndDate)
+
+
+'select data for correct date and account number
+F.intrinsic.string.build("select Acct_No, CK_Or_Void, Amount, Payee, CK_MDYY, CK_No from Checks_Log where Ck_Date between '{0}' and '{1}' order by CK_NO",V.Local.sBegDate,V.Local.sEndDate,V.Local.sSel)
+F.Odbc.Connection!Conx.Openrecordsetro("rstSel",V.Local.sSel)
+F.Intrinsic.Control.dountil(Variable.Odbc.Conx!rstSel.Eof,=,True)
+
+	V.local.sExport.redim(0,9)
+	F.Intrinsic.String.LPad(V.Local.sExport(0)," ",2,V.Local.sExport(0))
+	F.Intrinsic.String.LPad(V.ODBC.Conx!rstSel.FieldValTrim!Acct_No,"0",10,V.Local.sExport(1))
+	F.Intrinsic.String.LPad(V.Local.sExport(2)," ",1,V.Local.sExport(2))
+	F.Intrinsic.Control.If(V.ODBC.Conx!rstSel.FieldValTrim!CK_OR_VOID,=,"C")
+		V.Local.sExport(3).Set(" ")
+	F.Intrinsic.Control.Else
+		V.Local.sExport(3).Set("V")
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.LPad(V.Local.sExport(4)," ",1,V.Local.sExport(4))
+	V.Local.fVal.Set(V.ODBC.Conx!rstSel.FieldValTrim!Amount)
+	F.Intrinsic.Control.If(V.Local.sExport(3),=,"V")
+		F.Intrinsic.Math.Mult(V.Local.fVal,-1,V.Local.fVal)
+	F.Intrinsic.Control.EndIf
+	F.Intrinsic.String.Replace(V.Local.fVal,".","",V.Local.sExport(5))
+	F.Intrinsic.String.LPad(V.Local.sExport(5),"0",11,V.Local.sExport(5))
+	F.Intrinsic.String.RPad(V.ODBC.Conx!rstSel.FieldValTrim!Payee," ",15,V.Local.sExport(6))
+	V.Local.sExport(7).Set(V.ODBC.Conx!rstSel.FieldVal!Ck_MDYY)
+	F.Intrinsic.String.LPad(V.ODBC.Conx!rstSel.FieldVal!Ck_NO,"0",9,V.Local.sExport(8))
+	F.Intrinsic.String.LPad(V.Local.sExport(9)," ",22,V.Local.sExport(9))
+
+	F.Intrinsic.String.Join(V.Local.sExport,"",V.Local.sHold)
+	F.Intrinsic.String.Concat(V.Local.sFileData,V.Local.sHold,V.Ambient.NewLine,V.Local.sFileData)
+
+F.Odbc.Conx!rstSel.movenext
+F.intrinsic.control.loop
+F.Odbc.Conx!rstSel.Close
+
+F.Intrinsic.File.String2File(V.Local.sFileName,V.Local.sFileData)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("Detail_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: PNC_Positive_Pay_Export_VAR002.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_form1_unload)
+Function.Intrinsic.Control.EndIf
+
+
+Program.Sub.Detail.End
+
+program.sub.ss_form1_unload.start
+F.Intrinsic.Control.SetErrorHandler("ss_form1_unload_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.ODBC.Connection!Conx.Close
+F.Intrinsic.Control.End
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("ss_form1_unload_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: PNC_Positive_Pay_Export_VAR002.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.End
+Function.Intrinsic.Control.EndIf
+
+
+program.sub.ss_form1_unload.end
+
+program.sub.cmdok_click.start
+F.Intrinsic.Control.SetErrorHandler("cmdok_click_Err")
+F.Intrinsic.Control.ClearErrors
+
+V.Local.sError.Declare(String)
+
+F.Intrinsic.Control.CallSub(Detail)
+F.Intrinsic.Control.CallSub(Ss_form1_unload)
+
+F.Intrinsic.Control.ExitSub
+
+F.Intrinsic.Control.Label("cmdok_click_Err")
+F.Intrinsic.Control.If(V.Ambient.ErrorNumber,<>,0)
+	Function.Intrinsic.String.Concat("Project: PNC_Positive_Pay_Export_VAR002.gas",V.Ambient.Newline,V.Ambient.Newline,"Subroutine: ",V.Ambient.CurrentSubroutine,V.Ambient.NewLine,"Error Occurred ",V.Ambient.ErrorNumber," with description ",V.Ambient.ErrorDescription,V.Local.sError)
+	F.Intrinsic.UI.Msgbox(V.Local.sError)
+	F.Intrinsic.Control.CallSub(Ss_form1_unload)
+Function.Intrinsic.Control.EndIf
+
+
+program.sub.cmdok_click.end
+
+Program.Sub.ScreenSS.Start
+SS_Form1{{CAPTION::PNC Positive Pay Export v2
+SS_Form1.CTRL{{NAME::dtpBeg\\TYPE::6\\CAPTION::Beginning Date\\TABSTOP::1\\GROUP::1\\BROWSER::0\\SIZE::1
+SS_Form1.CTRL{{NAME::dtpEnd\\TYPE::6\\CAPTION::Ending Date\\TABSTOP::2\\GROUP::1\\BROWSER::0\\SIZE::1
+SS_Form1.CTRL{{NAME::cmdOk\\TYPE::5\\CAPTION::Ok\\TABSTOP::3\\GROUP::2\\BROWSER::0\\SIZE::1
+
+Program.Sub.ScreenSS.End
+Program.Sub.Comments.Start
+${$0$}$PNC_Positive_Pay_Export_VAR002$}$JCT$}$4/17/2014
+${$3$}$0$}$$}$-1$}$-1$}$$}$1/1/1900$}$for UMP, per quote 5043
+fixed width check file
+Filler (2), blank fill
+Account (10), right justified, zero fill
+Filler (1), blank fill
+Check/Void (1), check = “ ”, Void = “V”
+Filler (1), blank fill
+Amount (11), implied decimal, right justified, zero fill
+Payee (15), left justified, blank fill
+Check Date (8), mmddyyyy
+Check No (9), right justified, zero fill
+Filler (22), blank fill
+Program.Sub.Comments.End
+
